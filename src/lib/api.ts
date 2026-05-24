@@ -10,13 +10,32 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    ...init,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+      ...init,
+    });
+  } catch {
+    throw new ApiError("A backend nem érhető el.", 0);
+  }
+  const ctype = res.headers.get("content-type") ?? "";
   if (!res.ok) {
-    const text = await res.text().catch(() => res.statusText);
-    throw new ApiError(text || `Request failed: ${res.status}`, res.status);
+    if (res.status === 404 || !ctype.includes("application/json")) {
+      throw new ApiError(
+        "A backend végpont nem érhető el. Ez a funkció csak a VPS telepítésen működik (Docker backend kontéenerrel).",
+        res.status,
+      );
+    }
+    let msg = res.statusText || `Request failed: ${res.status}`;
+    try {
+      const j = await res.json();
+      msg = j.error || j.message || msg;
+    } catch {}
+    throw new ApiError(msg, res.status);
+  }
+  if (!ctype.includes("application/json")) {
+    throw new ApiError("A backend nem érhető el (nem JSON válasz).", 0);
   }
   return res.json() as Promise<T>;
 }
