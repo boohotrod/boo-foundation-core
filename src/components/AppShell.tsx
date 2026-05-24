@@ -35,7 +35,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           <Shield className="h-6 w-6 text-primary" />
           <div>
             <div className="font-semibold leading-tight">BBS Core</div>
-            <div className="text-xs text-muted-foreground">v0.1.2</div>
+            <div className="text-xs text-muted-foreground">v0.2.0</div>
           </div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
