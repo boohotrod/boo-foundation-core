@@ -154,13 +154,4 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
-
-  input:focus,
-  textarea:focus,
-  select:focus,
-  button:focus,
-  a:focus {
-    outline: 1px solid var(--color-ring);
-    outline-offset: 0;
-  }
 }
