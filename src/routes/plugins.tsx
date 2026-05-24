@@ -26,11 +26,11 @@ function PluginsPage() {
   });
 
   return (
-    <AppShell title="Plugins">
-      {isLoading && <p className="text-sm text-muted-foreground">Loading plugins…</p>}
+    <AppShell title="Bővítmények">
+      {isLoading && <p className="text-sm text-muted-foreground">Bővítmények betöltése…</p>}
       {isError && (
         <p className="text-sm text-destructive">
-          Could not reach backend. Start the API server (see README).
+          Nem sikerült elérni a háttérszolgáltatást. Indítsd el az API szervert (lásd README).
         </p>
       )}
       <div className="grid gap-3">
