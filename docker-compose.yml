@@ -1,5 +1,5 @@
-# BBS Core v0.1.0 — docker-compose stack
-# Tested target: Hetzner VPS with Docker + Portainer.
+# BBS Core v0.1.2 — docker-compose stack
+# Build: production-foundation
 #
 # Quick start:
 #   cp .env.example .env   # then edit values
@@ -13,11 +13,12 @@
 # Required env vars (set in .env or export before running):
 #   DB_PASSWORD, APP_SECRET
 #
-# Optional env vars with sensible defaults are shown inline below.
+# NEVER run `docker compose down -v` — it deletes the database volume.
 
 services:
   db:
     image: mariadb:11
+    container_name: bbs_db
     restart: unless-stopped
     environment:
       MARIADB_DATABASE: ${DB_NAME:-bbs_core}
@@ -31,11 +32,13 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
     networks: [bbs_net]
 
   backend:
     build:
       context: ./backend
+    container_name: bbs_backend
     restart: unless-stopped
     environment:
       DB_HOST: ${DB_HOST:-db}
@@ -45,28 +48,43 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       APP_SECRET: ${APP_SECRET}
       PORT: ${PORT:-4000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
       BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
       BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
       BACKUP_PATH: ${BACKUP_PATH:-/backups}
     volumes:
       # Host-mounted backups directory. SQL dumps land here, timestamped.
-      # NEVER add the MariaDB data volume here and NEVER run
-      # `docker compose down -v` — it deletes the database.
       - ./backups:/backups
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      # Uses node + http (no curl/wget needed in image).
+      test:
+        - "CMD-SHELL"
+        - "node -e \"require('http').get('http://127.0.0.1:'+(process.env.PORT||4000)+'/api/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))\""
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks: [bbs_net]
 
   frontend:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: bbs_frontend
     restart: unless-stopped
     ports:
       - "8080:80"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     networks: [bbs_net]
 
 volumes:

@@ -1,153 +1,238 @@
-# BBS Core — VPS deployment guide (v0.1.2)
+# BBS Core — Deployment & Operations Guide
 
-Target: Hetzner VPS with Docker + Portainer. System nginx must remain
-disabled — the frontend container's nginx serves the SPA on port 8080.
+**Version:** v0.1.2
+**Build:** production-foundation
+**Target:** Hetzner VPS, Docker + Portainer
+**Containers:** `bbs_db`, `bbs_backend`, `bbs_frontend`
 
-## 1. Prerequisites
+---
 
-- Docker + Docker Compose plugin installed
-- Project cloned to the VPS (e.g. `/opt/bbs-core`)
-- `.env` file with at minimum `DB_PASSWORD` and `APP_SECRET` set
-  (copy from `.env.example`)
-- A writable `./backups` directory in the project root (auto-created by
-  Docker if missing; bind-mounted into the backend at `/backups`)
-
-## 2. Standard deploy (pull + rebuild)
+## 1. Initial deploy
 
 ```bash
 cd /opt/bbs-core
 git pull
-docker compose down
+cp .env.example .env   # first time only — set DB_PASSWORD and APP_SECRET
 docker compose up -d --build
-docker ps
+docker compose ps
 ```
 
-> ⚠️ NEVER run `docker compose down -v`. The `-v` flag deletes the
-> `bbs_db_data` volume — your entire MariaDB database is gone. The
-> backup bind-mount (`./backups`) is on the host filesystem and is
-> untouched by compose volume commands.
+Expected `docker compose ps` after ~60s:
 
-All three containers should report `Up` with `restart: unless-stopped`:
+| NAME           | STATUS                       |
+|----------------|------------------------------|
+| `bbs_db`       | `Up (healthy)`               |
+| `bbs_backend`  | `Up (healthy)`               |
+| `bbs_frontend` | `Up (healthy)`               |
 
-- `bbs-core-frontend-1`  → nginx + SPA, port 8080
-- `bbs-core-backend-1`   → Node.js API on internal :4000, mariadb-client installed
-- `bbs-core-db-1`        → MariaDB 11
+---
 
-## 3. Health verification
-
-Replace `<VPS_IP>` with the server's public IP (e.g. `178.105.46.214`).
-
-| URL                                         | Expected                                                       |
-| ------------------------------------------- | -------------------------------------------------------------- |
-| `http://<VPS_IP>:8080/health`               | Plain text: `BBS Core Frontend OK / Version: 0.1.2 / ...`       |
-| `http://<VPS_IP>:8080/api/health`           | JSON with `"status":"ok"`, `"database":"connected"`, `version` |
-| `http://<VPS_IP>:8080/api/backup/status`    | JSON with `scheduled`, `interval_hours`, `last_backup`         |
-| `http://<VPS_IP>:8080/`                     | Login page (no freeze on input focus)                          |
-| `http://<VPS_IP>:8080/dashboard`            | Admin dashboard after login, footer shows `v0.1.2`             |
-
-Quick curl checks:
-
-```bash
-curl -s http://<VPS_IP>:8080/health
-curl -s http://<VPS_IP>:8080/api/health | jq
-curl -s http://<VPS_IP>:8080/api/backup/status | jq
-```
-
-## 4. Backup (v0.1.2)
-
-The backend produces timestamped MariaDB dumps using `mariadb-dump`.
-
-- **Storage path (container)**: `/backups`
-- **Storage path (host)**: `./backups` in the project root
-- **File naming**: `backup-YYYY-MM-DDTHH-MM-SS-sssZ.sql` (UTC, unique per run)
-- **Manual trigger**: `POST /api/backup/run` (button on `/system-health`)
-- **Status**: `GET /api/backup/status`
-- **Scheduler**: enabled by default, every `BACKUP_INTERVAL_HOURS` hours
-
-Configure via `.env`:
-
-```env
-BACKUP_ENABLED=true
-BACKUP_INTERVAL_HOURS=24
-BACKUP_PATH=/backups
-```
-
-### Test commands
-
-```bash
-# Trigger a manual backup
-curl -s -X POST http://<VPS_IP>:8080/api/backup/run | jq
-
-# Inspect status
-curl -s http://<VPS_IP>:8080/api/backup/status | jq
-
-# List backup files on the VPS
-ls -lh /opt/bbs-core/backups
-
-# Verify the dump opens cleanly
-head -n 20 /opt/bbs-core/backups/backup-*.sql | head
-```
-
-### Backup safety rules
-
-- Each run writes a **new timestamped file** (`O_EXCL`) — existing dumps
-  are never overwritten.
-- The MariaDB data volume (`bbs_db_data`) is **never touched** by the
-  backup process; only read via a logical dump.
-- Backup files live on the host (`./backups`) and survive container
-  rebuilds. Rotate / off-site copy them yourself (rsync, restic, etc.).
-- Never run `docker compose down -v`.
-
-## 5. Logs
-
-```bash
-docker logs --tail=200 -f bbs-core-backend-1
-docker logs --tail=200 -f bbs-core-frontend-1
-docker logs --tail=200 -f bbs-core-db-1
-```
-
-Backend logs are structured JSON (one event per line). Backup-related
-events: `backup_requested`, `backup_started`, `backup_completed`,
-`backup_failed`, `backup_scheduler_started`, `backup_scheduler_disabled`.
-
-## 6. Rollback
-
-> Warning: rolling back the frontend / backend image is safe, but the
-> MariaDB volume (`bbs_db_data`) is persistent. Never run
-> `docker compose down -v` in production — it deletes the database.
-
-Safe rollback to the previous git revision:
+## 2. Update / rebuild
 
 ```bash
 cd /opt/bbs-core
-git log --oneline -n 10        # find the previous good commit
-git checkout <previous-sha>
-docker compose up -d --build
-docker ps
-curl -s http://<VPS_IP>:8080/api/health | jq
+git pull
+
+# Rebuild only what changed:
+docker compose up -d --build backend     # backend code change
+docker compose up -d --build frontend    # frontend or nginx change
+docker compose up -d --build             # everything
 ```
 
-If a deploy leaves the stack in a bad state, the fastest recovery is:
+Frontend changes go live the moment the new container is healthy. Browsers
+that already have `index.html` cached will pick up the new build on next
+navigation (we send `Cache-Control: no-store` for `index.html`).
+
+---
+
+## 3. Healthchecks
+
+Endpoints:
 
 ```bash
-docker compose down
-git checkout <last-known-good-sha>
-docker compose up -d --build
+# Frontend nginx
+curl -s http://178.105.46.214:8080/health
+
+# Backend API + DB
+curl -s http://178.105.46.214:8080/api/health | jq
+
+# Backup status
+curl -s http://178.105.46.214:8080/api/backup/status | jq
 ```
 
-The database volume and `./backups` directory are preserved across all
-of the above.
+Container health:
 
-## 7. What's in v0.1.2 (backup-safety)
+```bash
+docker compose ps
+docker inspect --format '{{.State.Health.Status}}' bbs_backend
+docker inspect --format '{{.State.Health.Status}}' bbs_frontend
+docker inspect --format '{{.State.Health.Status}}' bbs_db
+```
 
-- Manual backup endpoint `POST /api/backup/run`
-- Backup status endpoint `GET /api/backup/status`
-- Scheduled backups (default: every 24h, env-configurable)
-- Frontend "Biztonsági mentés" panel on `/system-health` with
-  "Mentés indítása" button
-- `mariadb-client` baked into the backend image
-- Host-mounted `./backups:/backups` volume for durable dumps
-- Version identity bumped to `v0.1.2` / build `backup-safety`
+Possible values: `starting`, `healthy`, `unhealthy`. `unhealthy` containers
+keep running; investigate via logs (see §5).
 
-Carried over from v0.1.1: restart policies, `/health`, `/api/health`,
-structured logging, login isolation.
+---
+
+## 4. Database backups
+
+Backups are timestamped `.sql` files in `./backups/` on the host (mounted
+to `/backups` inside the backend container).
+
+### Manual backup
+
+```bash
+./scripts/backup-db.sh
+ls -lh backups/
+```
+
+Filename pattern: `bbs-<DB_NAME>-v<VERSION>-<UTC_TIMESTAMP>.sql`
+Example: `bbs-bbs_core-v0.1.2-2026-05-24T20-15-00Z.sql`
+
+You can also trigger via API:
+
+```bash
+curl -X POST http://178.105.46.214:8080/api/backup/run
+```
+
+### Restore — DESTRUCTIVE
+
+> **WARNING:** restoring OVERWRITES the current database. Always take a
+> fresh backup first.
+
+```bash
+./scripts/backup-db.sh                                   # safety net
+./scripts/restore-db.sh backups/<backup-file>.sql        # type RESTORE to confirm
+```
+
+### Backup retention
+
+Manual for now. Suggested:
+
+```bash
+# Keep the 20 newest backups; delete older
+ls -1t backups/*.sql | tail -n +21 | xargs -r rm --
+```
+
+> **Never** run `docker compose down -v` — the `-v` flag deletes the
+> `bbs_db_data` volume and all customer data with it.
+
+---
+
+## 5. Logs & inspection
+
+```bash
+# Tail logs
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f db
+
+# Last 200 lines, all services
+docker compose logs --tail=200
+
+# Filter backend logs by level (logs are JSON, one entry per line)
+docker compose logs backend | grep '"level":"error"'
+
+# Inspect a container
+docker inspect bbs_backend | less
+```
+
+---
+
+## 6. Rollback
+
+### A. Code rollback (most common)
+
+```bash
+cd /opt/bbs-core
+git log --oneline -10
+git revert <bad-sha> --no-edit
+docker compose up -d --build
+docker compose ps
+```
+
+### B. Last-resort: pin to a previous commit
+
+```bash
+git checkout <good-sha>
+docker compose up -d --build
+# When stable, fast-forward main on the build host.
+```
+
+### C. Database rollback
+
+```bash
+./scripts/restore-db.sh backups/<known-good>.sql
+```
+
+---
+
+## 7. Failed deploy recovery
+
+If the new build is broken or a container is `unhealthy`:
+
+```bash
+# 1. Check what's failing
+docker compose ps
+docker compose logs --tail=200 backend
+docker compose logs --tail=200 frontend
+
+# 2. Restart the affected service
+docker compose restart backend
+# or hard restart of everything
+docker compose down && docker compose up -d
+
+# 3. If still broken, roll the code back (see §6)
+
+# 4. If the DB itself is wedged
+docker compose restart db
+```
+
+---
+
+## 8. Emergency restart
+
+```bash
+# Single container (no rebuild)
+docker compose restart backend
+
+# Whole stack (no rebuild, no data loss)
+docker compose down && docker compose up -d
+
+# Full rebuild from source
+docker compose down && docker compose up -d --build
+```
+
+`docker compose down` (without `-v`) is safe — it stops and removes
+containers but keeps the named volume `bbs_db_data`.
+
+---
+
+## 9. Required environment variables
+
+Set in `.env` next to `docker-compose.yml`:
+
+| Variable                | Required | Default               | Notes                                  |
+|-------------------------|----------|-----------------------|----------------------------------------|
+| `DB_PASSWORD`           | yes      | —                     | MariaDB user password                  |
+| `APP_SECRET`            | yes      | —                     | App secret, used by v0.2.0+ auth       |
+| `DB_HOST`               | no       | `db`                  | Compose service name                   |
+| `DB_PORT`               | no       | `3306`                |                                        |
+| `DB_NAME`               | no       | `bbs_core`            |                                        |
+| `DB_USER`               | no       | `bbs`                 |                                        |
+| `PORT`                  | no       | `4000`                | Backend listen port                    |
+| `LOG_LEVEL`             | no       | `info`                | `debug` / `info` / `warn` / `error`    |
+| `BACKUP_ENABLED`        | no       | `true`                | Scheduler on/off                       |
+| `BACKUP_INTERVAL_HOURS` | no       | `24`                  | Min 1                                  |
+| `BACKUP_PATH`           | no       | `/backups`            | Inside backend container               |
+
+---
+
+## 10. Common URLs
+
+- App:               `http://178.105.46.214:8080/`
+- Frontend health:   `http://178.105.46.214:8080/health`
+- Backend health:    `http://178.105.46.214:8080/api/health`
+- System status:     `http://178.105.46.214:8080/api/system/status`
+- Backup status:     `http://178.105.46.214:8080/api/backup/status`
+- System Status UI:  `http://178.105.46.214:8080/system-health`
