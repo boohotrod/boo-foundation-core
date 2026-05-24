@@ -31,29 +31,29 @@ function RollbackPointsPage() {
   });
 
   return (
-    <AppShell title="Rollback Points">
+    <AppShell title="Visszaállítási pontok">
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-muted/50 text-left text-muted-foreground">
             <tr>
-              <th className="px-4 py-3 font-medium">ID</th>
-              <th className="px-4 py-3 font-medium">Label</th>
-              <th className="px-4 py-3 font-medium">Created</th>
-              <th className="px-4 py-3 font-medium text-right">Size</th>
+              <th className="px-4 py-3 font-medium">Azonosító</th>
+              <th className="px-4 py-3 font-medium">Címke</th>
+              <th className="px-4 py-3 font-medium">Létrehozva</th>
+              <th className="px-4 py-3 font-medium text-right">Méret</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
-                  Loading…
+                  Betöltés…
                 </td>
               </tr>
             )}
             {isError && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-destructive">
-                  Could not reach backend.
+                  Nem sikerült elérni a háttérszolgáltatást.
                 </td>
               </tr>
             )}
@@ -62,7 +62,7 @@ function RollbackPointsPage() {
                 <td className="px-4 py-3 font-mono">{r.id}</td>
                 <td className="px-4 py-3">{r.label}</td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {new Date(r.created_at).toLocaleString()}
+                  {new Date(r.created_at).toLocaleString("hu-HU")}
                 </td>
                 <td className="px-4 py-3 text-right font-mono">{fmtBytes(r.size_bytes)}</td>
               </tr>
@@ -70,7 +70,7 @@ function RollbackPointsPage() {
             {data && data.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-6 text-center text-muted-foreground">
-                  No rollback points yet.
+                  Nincs még visszaállítási pont.
                 </td>
               </tr>
             )}
