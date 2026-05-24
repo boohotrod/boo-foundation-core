@@ -6,7 +6,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { api, AppSetting } from "@/lib/api";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Beállítások — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <SettingsPage />
