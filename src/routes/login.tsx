@@ -38,7 +38,7 @@ function LoginPage() {
     const password = String(form.get("password") ?? "");
 
     if (!username || !password) {
-      setError("Username and password are required.");
+      setError("A felhasználónév és a jelszó megadása kötelező.");
       return;
     }
 
@@ -50,7 +50,7 @@ function LoginPage() {
         (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
       );
       if (!found) {
-        setError("Invalid username or password.");
+        setError("Érvénytelen felhasználónév vagy jelszó.");
         return;
       }
     }
