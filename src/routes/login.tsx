@@ -1,119 +1,125 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Bejelentkezés — BBS Core" },
-      { name: "description", content: "Jelentkezz be a Boo Base System vezérlőpultjára." },
+      { name: "description", content: "BBS Core bejelentkezés." },
     ],
   }),
   component: LoginPage,
 });
 
-interface StoredUser {
-  username: string;
-  password: string;
-  createdAt: number;
-}
+const pageStyle = {
+  minHeight: "100vh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "24px",
+  background: "#ffffff",
+  color: "#111827",
+  fontFamily: "Arial, sans-serif",
+} as const;
 
-function loadUsers(): StoredUser[] {
-  try {
-    const raw = localStorage.getItem("bbs_users");
-    return raw ? (JSON.parse(raw) as StoredUser[]) : [];
-  } catch {
-    return [];
-  }
-}
+const panelStyle = {
+  width: "100%",
+  maxWidth: "340px",
+} as const;
+
+const formStyle = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "14px",
+} as const;
+
+const labelStyle = {
+  display: "block",
+  marginBottom: "6px",
+  fontSize: "14px",
+} as const;
+
+const inputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "10px",
+  fontSize: "16px",
+  border: "1px solid #9ca3af",
+  borderRadius: "4px",
+  background: "#ffffff",
+  color: "#111827",
+  outline: "1px solid transparent",
+} as const;
+
+const buttonStyle = {
+  width: "100%",
+  padding: "10px",
+  fontSize: "16px",
+  border: "1px solid #111827",
+  borderRadius: "4px",
+  background: "#111827",
+  color: "#ffffff",
+  cursor: "pointer",
+} as const;
 
 function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
 
-  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setError(null);
-
-    const form = new FormData(e.currentTarget);
-    const username = String(form.get("username") ?? "").trim();
-    const password = String(form.get("password") ?? "");
-
-    if (!username || !password) {
-      setError("A felhasználónév és a jelszó megadása kötelező.");
-      return;
-    }
-
-    const users = loadUsers();
-    // v0.1.0 placeholder auth — accept any credentials if no account exists yet
-    // (first-run convenience), otherwise verify against the local store.
-    if (users.length > 0) {
-      const found = users.find(
-        (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
-      );
-      if (!found) {
-        setError("Érvénytelen felhasználónév vagy jelszó.");
-        return;
-      }
-    }
-
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     localStorage.setItem(
       "bbs_session",
-      JSON.stringify({ user: username, ts: Date.now() })
+      JSON.stringify({ user: username || "admin", token: "placeholder", ts: Date.now() }),
     );
-    window.location.assign("/dashboard");
+    navigate({ to: "/dashboard" });
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-primary text-lg font-bold text-primary-foreground">
-            B
-          </div>
-          <h1 className="text-2xl font-semibold">BBS Core bejelentkezés</h1>
-          <p className="text-sm text-muted-foreground">Boo Base System · v0.1.0</p>
-        </div>
-        <form
-          onSubmit={onSubmit}
-          className="space-y-4 rounded-md border border-border bg-card p-6"
-        >
+    <main style={pageStyle}>
+      <section style={panelStyle}>
+        <h1 style={{ margin: "0 0 8px", fontSize: "24px", lineHeight: 1.2 }}>BBS Core</h1>
+        <p style={{ margin: "0 0 24px", fontSize: "14px", color: "#4b5563" }}>
+          Bejelentkezés
+        </p>
+
+        <form onSubmit={onSubmit} style={formStyle}>
           <div>
-            <label htmlFor="bbs-username" className="mb-1 block text-sm font-medium">
+            <label htmlFor="bbs-username" style={labelStyle}>
               Felhasználónév
             </label>
             <input
               id="bbs-username"
               name="username"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              type="text"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
               autoComplete="username"
+              style={inputStyle}
             />
           </div>
+
           <div>
-            <label htmlFor="bbs-password" className="mb-1 block text-sm font-medium">
+            <label htmlFor="bbs-password" style={labelStyle}>
               Jelszó
             </label>
             <input
               id="bbs-password"
               name="password"
               type="password"
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
+              style={inputStyle}
             />
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
+
+          <button type="submit" style={buttonStyle}>
             Bejelentkezés
           </button>
-          <p className="text-center text-xs text-muted-foreground">
-            Nincs még fiókod?{" "}
-            <a href="/register" className="text-primary underline">
-              Regisztráció
-            </a>
-          </p>
         </form>
-      </div>
+      </section>
     </main>
   );
 }
