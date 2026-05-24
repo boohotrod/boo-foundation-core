@@ -132,6 +132,15 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    animation: none;
+    transition-property: none;
+    backdrop-filter: none;
+    filter: none;
+  }
+
   * {
     border-color: var(--color-border);
   }
@@ -139,14 +148,6 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-  }
-
-  input,
-  button,
-  textarea,
-  select,
-  a {
-    transition: none;
   }
 
   input:focus,
