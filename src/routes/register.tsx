@@ -2,18 +2,19 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Shield } from "lucide-react";
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Login — BBS Core" },
-      { name: "description", content: "Sign in to the Boo Base System control panel." },
+      { title: "Register — BBS Core" },
+      { name: "description", content: "Create a Boo Base System admin account." },
     ],
   }),
-  component: LoginPage,
+  component: RegisterPage,
 });
 
 interface StoredUser {
   username: string;
+  // v0.1.0 placeholder — passwords stay client-side until the v0.2.0 server auth.
   password: string;
   createdAt: number;
 }
@@ -27,34 +28,38 @@ function loadUsers(): StoredUser[] {
   }
 }
 
-function LoginPage() {
+function RegisterPage() {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!username || !password) {
-      setError("Username and password are required.");
+    if (username.length < 3) {
+      setError("Username must be at least 3 characters.");
+      return;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return;
+    }
+    if (password !== confirm) {
+      setError("Passwords do not match.");
       return;
     }
 
     const users = loadUsers();
-    // v0.1.0 placeholder auth — accept any credentials if no account exists yet
-    // (first-run convenience), otherwise verify against the local store.
-    if (users.length > 0) {
-      const found = users.find(
-        (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
-      );
-      if (!found) {
-        setError("Invalid username or password.");
-        return;
-      }
+    if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
+      setError("This username is already registered.");
+      return;
     }
 
+    const next: StoredUser = { username, password, createdAt: Date.now() };
+    localStorage.setItem("bbs_users", JSON.stringify([...users, next]));
     localStorage.setItem(
       "bbs_session",
       JSON.stringify({ user: username, ts: Date.now() })
@@ -69,7 +74,7 @@ function LoginPage() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Shield className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-semibold">BBS Core</h1>
+          <h1 className="text-2xl font-semibold">Create account</h1>
           <p className="text-sm text-muted-foreground">Boo Base System · v0.1.0</p>
         </div>
         <form
@@ -92,7 +97,17 @@ function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              autoComplete="current-password"
+              autoComplete="new-password"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium">Confirm password</label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              autoComplete="new-password"
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
@@ -100,15 +115,18 @@ function LoginPage() {
             type="submit"
             className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            Sign in
+            Create account
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            Don't have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline">
-              Register
+            Already have an account?{" "}
+            <Link to="/login" className="text-primary hover:underline">
+              Sign in
             </Link>
           </p>
         </form>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          v0.1.0 stores accounts locally. Server-side auth lands in v0.2.0.
+        </p>
       </div>
     </div>
   );
