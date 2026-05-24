@@ -40,21 +40,21 @@ function RegisterPage() {
     setError(null);
 
     if (username.length < 3) {
-      setError("Username must be at least 3 characters.");
+      setError("A felhasználónévnek legalább 3 karakter hosszúnak kell lennie.");
       return;
     }
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError("A jelszónak legalább 6 karakter hosszúnak kell lennie.");
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match.");
+      setError("A jelszavak nem egyeznek.");
       return;
     }
 
     const users = loadUsers();
     if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
-      setError("This username is already registered.");
+      setError("Ez a felhasználónév már foglalt.");
       return;
     }
 
