@@ -77,6 +77,17 @@ app.post("/api/login", (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Backup ──────────────────────────────────────────────────────────────────
+app.post("/api/backup/run", async (_req, res) => {
+  log("info", "backup_requested", { trigger: "manual" });
+  const result = await runBackup({ trigger: "manual", logger: log });
+  res.status(result.status === "ok" ? 200 : 500).json(result);
+});
+
+app.get("/api/backup/status", (_req, res) => {
+  res.json(getBackupStatus());
+});
+
 // ── Plugins ─────────────────────────────────────────────────────────────────
 app.get("/api/plugins", async (_req, res, next) => {
   try {
