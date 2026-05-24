@@ -5,8 +5,8 @@ import { Shield } from "lucide-react";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Register — BBS Core" },
-      { name: "description", content: "Create a Boo Base System admin account." },
+      { title: "Regisztráció — BBS Core" },
+      { name: "description", content: "Hozz létre Boo Base System rendszergazdai fiókot." },
     ],
   }),
   component: RegisterPage,
