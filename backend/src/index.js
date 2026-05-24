@@ -216,6 +216,7 @@ async function boot() {
 
   app.listen(PORT, () => {
     log("info", "server_started", { port: PORT });
+    startScheduler(log);
   });
 }
 

@@ -45,6 +45,14 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       APP_SECRET: ${APP_SECRET}
       PORT: ${PORT:-4000}
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-true}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_PATH: ${BACKUP_PATH:-/backups}
+    volumes:
+      # Host-mounted backups directory. SQL dumps land here, timestamped.
+      # NEVER add the MariaDB data volume here and NEVER run
+      # `docker compose down -v` — it deletes the database.
+      - ./backups:/backups
     depends_on:
       db:
         condition: service_healthy
