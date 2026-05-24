@@ -5,8 +5,25 @@ import os from "os";
 import { query, ping, migrateAndSeed } from "./db.js";
 
 const PORT = Number(process.env.PORT || 4000);
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.1.1";
+const APP_BUILD = "stabilization";
+const APP_ENV = process.env.NODE_ENV || "production";
 const startedAt = Date.now();
+
+// ── Structured logger ──────────────────────────────────────────────────────
+function log(level, event, extra = {}) {
+  const entry = {
+    level,
+    event,
+    service: "backend",
+    version: APP_VERSION,
+    timestamp: new Date().toISOString(),
+    ...extra,
+  };
+  const line = JSON.stringify(entry);
+  if (level === "error") console.error(line);
+  else console.log(line);
+}
 
 const app = express();
 app.use(cors());
@@ -16,10 +33,14 @@ app.use(morgan("tiny"));
 // ── Health ──────────────────────────────────────────────────────────────────
 app.get("/api/health", async (_req, res) => {
   const db = await ping();
-  res.json({
-    status: db ? "ok" : "degraded",
-    uptime: (Date.now() - startedAt) / 1000,
+  res.status(db ? 200 : 503).json({
+    status: db ? "ok" : "error",
+    service: "backend",
     version: APP_VERSION,
+    build: APP_BUILD,
+    environment: APP_ENV,
+    database: db ? "connected" : "disconnected",
+    uptime: (Date.now() - startedAt) / 1000,
     timestamp: new Date().toISOString(),
   });
 });
@@ -34,11 +55,25 @@ app.get("/api/system/status", async (_req, res) => {
   res.json({
     cpu: Math.min(100, (load / cpuCount) * 100),
     memory: { used: totalMem - freeMem, total: totalMem },
-    // Disk metrics require a native lib; report container-rootfs approximation.
     disk: { used: 0, total: 0 },
     database: db ? "connected" : "disconnected",
     uptime: (Date.now() - startedAt) / 1000,
+    version: APP_VERSION,
+    build: APP_BUILD,
+    environment: APP_ENV,
   });
+});
+
+// ── Login (placeholder, logs failed attempts) ───────────────────────────────
+app.post("/api/login", (req, res) => {
+  const username = String(req.body?.username || "");
+  // v0.1.x: client-side placeholder auth. Backend only logs the attempt.
+  if (!username) {
+    log("warn", "login_failed", { reason: "missing_username" });
+    return res.status(400).json({ error: "username required" });
+  }
+  log("info", "login_attempt", { username });
+  res.json({ ok: true });
 });
 
 // ── Plugins ─────────────────────────────────────────────────────────────────
@@ -126,27 +161,49 @@ app.get("/api/rollback-points", async (_req, res, next) => {
 });
 
 // ── Error handler ───────────────────────────────────────────────────────────
-app.use((err, _req, res, _next) => {
-  console.error("[bbs-core]", err);
+app.use((err, req, res, _next) => {
+  log("error", "api_error", {
+    path: req.path,
+    method: req.method,
+    message: err?.message,
+    stack: err?.stack,
+  });
   res.status(500).json({ error: "Internal server error" });
+});
+
+// ── Process-level safety net ───────────────────────────────────────────────
+process.on("uncaughtException", (err) => {
+  log("error", "uncaught_exception", { message: err?.message, stack: err?.stack });
+});
+process.on("unhandledRejection", (reason) => {
+  log("error", "unhandled_rejection", { reason: String(reason) });
 });
 
 // ── Boot ────────────────────────────────────────────────────────────────────
 async function boot() {
-  // Wait for the database to become available (compose starts it in parallel).
+  log("info", "server_starting", { port: PORT, version: APP_VERSION, build: APP_BUILD });
+
+  let dbReady = false;
   for (let i = 0; i < 30; i++) {
-    if (await ping()) break;
-    console.log("[bbs-core] waiting for database…");
+    if (await ping()) {
+      dbReady = true;
+      break;
+    }
+    log("warn", "db_waiting", { attempt: i + 1 });
     await new Promise((r) => setTimeout(r, 2000));
   }
+  if (dbReady) log("info", "db_connected");
+  else log("error", "db_connect_failed", { attempts: 30 });
+
   try {
     await migrateAndSeed();
-    console.log("[bbs-core] schema ready");
+    log("info", "db_schema_ready");
   } catch (e) {
-    console.error("[bbs-core] migration failed", e);
+    log("error", "db_migration_failed", { message: e?.message, stack: e?.stack });
   }
+
   app.listen(PORT, () => {
-    console.log(`[bbs-core] API listening on :${PORT}`);
+    log("info", "server_started", { port: PORT });
   });
 }
 

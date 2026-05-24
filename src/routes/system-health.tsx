@@ -38,6 +38,28 @@ function SystemHealthPage() {
 
   return (
     <AppShell title="Rendszerállapot">
+      <div className="mb-4 rounded-xl border border-border bg-card p-5">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Rendszer összegzés
+        </h3>
+        <dl className="grid gap-2 text-sm md:grid-cols-2">
+          <Row label="Frontend" value="OK (v0.1.1)" />
+          <Row
+            label="Backend"
+            value={
+              health.isError
+                ? "leállt"
+                : health.data
+                  ? `${health.data.status} (v${health.data.version})`
+                  : "…"
+            }
+          />
+          <Row label="Adatbázis" value={status.data?.database ?? (status.isError ? "nincs kapcsolat" : "…")} />
+          <Row label="Build" value={health.data?.build ?? "stabilization"} />
+          <Row label="Környezet" value={health.data?.environment ?? "production"} />
+          <Row label="Időbélyeg" value={new Date().toLocaleString("hu-HU")} />
+        </dl>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         <Panel title="API">
           <Row label="Állapot" value={health.data?.status ?? "—"} />
