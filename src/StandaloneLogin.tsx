@@ -1,4 +1,5 @@
-import { type FormEvent } from "react";
+import { type FormEvent, useState } from "react";
+import { api, ApiError, setAuthSession } from "./lib/api";
 
 const pageStyle = {
   minHeight: "100vh",
@@ -52,16 +53,30 @@ const buttonStyle = {
 } as const;
 
 export function StandaloneLogin() {
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const username = String(form.get("username") || "admin");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-    localStorage.setItem(
-      "bbs_session",
-      JSON.stringify({ user: username || "admin", token: "placeholder", ts: Date.now() }),
-    );
-    window.location.href = "/dashboard";
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setLoading(true);
+    const form = new FormData(event.currentTarget);
+    const username = String(form.get("username") || "").trim();
+    const password = String(form.get("password") || "");
+
+    try {
+      const session = await api.login(username, password);
+      setAuthSession(session);
+      window.location.href = "/dashboard";
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        setError("Hibás felhasználónév/email vagy jelszó.");
+      } else {
+        setError("A bejelentkezés nem sikerült. Ellenőrizd az adatokat, majd próbáld újra.");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -82,6 +97,7 @@ export function StandaloneLogin() {
               name="username"
               type="text"
               autoComplete="username"
+              required
               style={inputStyle}
             />
           </div>
@@ -95,12 +111,15 @@ export function StandaloneLogin() {
               name="password"
               type="password"
               autoComplete="current-password"
+              required
               style={inputStyle}
             />
           </div>
 
-          <button type="submit" style={buttonStyle}>
-            Bejelentkezés
+          {error && <p style={{ margin: 0, fontSize: "14px", color: "#b91c1c" }}>{error}</p>}
+
+          <button type="submit" disabled={loading} style={{ ...buttonStyle, opacity: loading ? 0.7 : 1 }}>
+            {loading ? "Bejelentkezés…" : "Bejelentkezés"}
           </button>
         </form>
       </section>
