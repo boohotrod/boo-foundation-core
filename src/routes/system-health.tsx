@@ -45,7 +45,7 @@ function SystemHealthPage() {
           Rendszer összegzés
         </h3>
         <dl className="grid gap-2 text-sm md:grid-cols-2">
-          <Row label="Frontend" value="OK (v0.1.2)" />
+          <Row label="Frontend" value="OK (v0.2.0)" />
           <Row
             label="Backend"
             value={
@@ -57,7 +57,7 @@ function SystemHealthPage() {
             }
           />
           <Row label="Adatbázis" value={status.data?.database ?? (status.isError ? "nincs kapcsolat" : "…")} />
-          <Row label="Build" value={health.data?.build ?? "production-foundation"} />
+          <Row label="Build" value={health.data?.build ?? "real-auth"} />
           <Row label="Környezet" value={health.data?.environment ?? "production"} />
           <Row label="Időbélyeg" value={new Date().toLocaleString("hu-HU")} />
         </dl>

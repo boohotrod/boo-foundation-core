@@ -1,29 +1,13 @@
 import { type ReactNode } from "react";
+import { getSession } from "../lib/api";
 
-// Lightweight, synchronous auth guard for v0.1.2.
-// Rules:
-//  - reads localStorage ONCE during render (no useEffect, no state, no loop)
-//  - if no session, hard-redirects to /login via window.location (the login
-//    route is bootstrapped by spa-main.tsx outside the router, so this avoids
-//    any router/AppShell rendering on the login page)
-//  - on the login page itself this guard is never used
-//  - SSR-safe: if window is undefined, render nothing
+// Synchronous auth guard. Reads localStorage once during render — no effects,
+// no router calls — to preserve the no-freeze login behavior.
 export function RequireAuth({ children }: { children: ReactNode }) {
   if (typeof window === "undefined") return null;
 
-  let hasSession = false;
-  try {
-    const raw = window.localStorage.getItem("bbs_session");
-    if (raw) {
-      const parsed = JSON.parse(raw) as { user?: string; token?: string } | null;
-      hasSession = !!(parsed && parsed.user);
-    }
-  } catch {
-    hasSession = false;
-  }
-
-  if (!hasSession) {
-    // Hard redirect — bypasses the router so AppShell never renders.
+  const session = getSession();
+  if (!session) {
     if (window.location.pathname !== "/login") {
       window.location.replace("/login");
     }
