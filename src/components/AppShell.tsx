@@ -9,6 +9,7 @@ import {
   LogOut,
   Shield,
 } from "lucide-react";
+import { api } from "../lib/api";
 
 const NAV = [
   { to: "/dashboard", label: "Vezérlőpult", icon: LayoutDashboard },
@@ -22,8 +23,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const logout = () => {
-    if (typeof window !== "undefined") localStorage.removeItem("bbs_session");
+  const logout = async () => {
+    await api.logout();
     navigate({ to: "/login" });
   };
 
