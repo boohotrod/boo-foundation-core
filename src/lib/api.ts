@@ -28,9 +28,13 @@ export const api = {
 };
 
 export interface HealthResponse {
-  status: "ok" | "degraded" | "down";
+  status: "ok" | "degraded" | "down" | "error";
   uptime: number;
   version: string;
+  build?: string;
+  environment?: string;
+  database?: "connected" | "disconnected";
+  service?: string;
   timestamp: string;
 }
 
