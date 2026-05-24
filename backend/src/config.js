@@ -3,8 +3,8 @@
 import { accessSync, constants, mkdirSync } from "node:fs";
 
 const APP_NAME = "BBS Core";
-const APP_VERSION = "0.1.2";
-const APP_BUILD = "production-foundation";
+const APP_VERSION = "0.2.0";
+const APP_BUILD = "real-auth";
 
 function readEnv(key, fallback = undefined) {
   const v = process.env[key];
@@ -22,12 +22,10 @@ function ensureWritableDir(dir) {
 }
 
 // Validate critical configuration. Returns { ok, errors[], warnings[] }.
-// We never throw here — boot() decides whether to exit or degrade.
 export function validateEnvironment() {
   const errors = [];
   const warnings = [];
 
-  // Database — required
   for (const key of ["DB_HOST", "DB_NAME", "DB_USER"]) {
     if (!readEnv(key)) errors.push(`Missing required env: ${key}`);
   }
@@ -35,14 +33,14 @@ export function validateEnvironment() {
     warnings.push("DB_PASSWORD is empty — only acceptable in local dev.");
   }
 
-  // App secret — required for v0.2.x auth, warn-only for v0.1.x
-  if (!readEnv("APP_SECRET")) {
-    warnings.push(
-      "APP_SECRET is not set. v0.1.x uses placeholder auth, but production must set this before v0.2.0.",
-    );
+  // APP_SECRET is REQUIRED in v0.2.0 (used to sign JWT auth tokens).
+  const secret = readEnv("APP_SECRET", "");
+  if (!secret) {
+    errors.push("APP_SECRET is required (>=32 chars) — used to sign auth tokens.");
+  } else if (secret.length < 32) {
+    warnings.push("APP_SECRET is shorter than 32 characters — regenerate with: openssl rand -base64 48");
   }
 
-  // Writable directories
   const backupPath = readEnv("BACKUP_PATH", "/backups");
   const dirCheck = ensureWritableDir(backupPath);
   if (!dirCheck.ok) {
@@ -79,5 +77,13 @@ export const config = Object.freeze({
     path: readEnv("BACKUP_PATH", "/backups"),
     enabled: String(readEnv("BACKUP_ENABLED", "true")).toLowerCase() === "true",
     intervalHours: Math.max(1, Number(readEnv("BACKUP_INTERVAL_HOURS", "24")) || 24),
+  },
+  auth: {
+    jwtExpiresIn: readEnv("JWT_EXPIRES_IN", "7d"),
+    bcryptRounds: Math.max(8, Number(readEnv("BCRYPT_ROUNDS", "10")) || 10),
+    superadminUsername: readEnv("SUPERADMIN_USERNAME", "superadmin"),
+    superadminEmail: readEnv("SUPERADMIN_EMAIL", "admin@bbs.local"),
+    // Used ONLY on first boot to seed the SuperAdmin user. Change after first login.
+    superadminPassword: readEnv("SUPERADMIN_PASSWORD", "ChangeMe!Admin123"),
   },
 });
