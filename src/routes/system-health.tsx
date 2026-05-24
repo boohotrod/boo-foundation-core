@@ -5,7 +5,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { api, HealthResponse, SystemStatus } from "@/lib/api";
 
 export const Route = createFileRoute("/system-health")({
-  head: () => ({ meta: [{ title: "System Health — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Rendszerállapot — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <SystemHealthPage />
