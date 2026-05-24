@@ -74,7 +74,7 @@ function RegisterPage() {
           <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
             <Shield className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-semibold">Create account</h1>
+          <h1 className="text-2xl font-semibold">Fiók létrehozása</h1>
           <p className="text-sm text-muted-foreground">Boo Base System · v0.1.0</p>
         </div>
         <form
@@ -82,7 +82,7 @@ function RegisterPage() {
           className="space-y-4 rounded-xl border border-border bg-card p-6"
         >
           <div>
-            <label className="mb-1 block text-sm font-medium">Username</label>
+            <label className="mb-1 block text-sm font-medium">Felhasználónév</label>
             <input
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -91,7 +91,7 @@ function RegisterPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Password</label>
+            <label className="mb-1 block text-sm font-medium">Jelszó</label>
             <input
               type="password"
               value={password}
@@ -101,7 +101,7 @@ function RegisterPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Confirm password</label>
+            <label className="mb-1 block text-sm font-medium">Jelszó megerősítése</label>
             <input
               type="password"
               value={confirm}
@@ -115,17 +115,17 @@ function RegisterPage() {
             type="submit"
             className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
-            Create account
+            Fiók létrehozása
           </button>
           <p className="text-center text-xs text-muted-foreground">
-            Already have an account?{" "}
+            Van már fiókod?{" "}
             <Link to="/login" className="text-primary hover:underline">
-              Sign in
+              Bejelentkezés
             </Link>
           </p>
         </form>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          v0.1.0 stores accounts locally. Server-side auth lands in v0.2.0.
+          A v0.1.0 helyben tárolja a fiókokat. A szerveroldali hitelesítés a v0.2.0-ban érkezik.
         </p>
       </div>
     </div>
