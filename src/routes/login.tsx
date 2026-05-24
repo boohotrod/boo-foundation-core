@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Shield } from "lucide-react";
 
@@ -12,20 +12,49 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 
+interface StoredUser {
+  username: string;
+  password: string;
+  createdAt: number;
+}
+
+function loadUsers(): StoredUser[] {
+  try {
+    const raw = localStorage.getItem("bbs_users");
+    return raw ? (JSON.parse(raw) as StoredUser[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 function LoginPage() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    // v0.1.0: lightweight local session. Real auth lands in a later milestone.
+
     if (!username || !password) {
       setError("Username and password are required.");
       return;
     }
+
+    const users = loadUsers();
+    // v0.1.0 placeholder auth — accept any credentials if no account exists yet
+    // (first-run convenience), otherwise verify against the local store.
+    if (users.length > 0) {
+      const found = users.find(
+        (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
+      );
+      if (!found) {
+        setError("Invalid username or password.");
+        return;
+      }
+    }
+
     localStorage.setItem(
       "bbs_session",
       JSON.stringify({ user: username, ts: Date.now() })
@@ -73,6 +102,12 @@ function LoginPage() {
           >
             Sign in
           </button>
+          <p className="text-center text-xs text-muted-foreground">
+            Don't have an account?{" "}
+            <Link to="/register" className="text-primary hover:underline">
+              Register
+            </Link>
+          </p>
         </form>
       </div>
     </div>
