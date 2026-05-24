@@ -4,10 +4,11 @@ import morgan from "morgan";
 import os from "os";
 import { query, ping, migrateAndSeed } from "./db.js";
 import { runBackup, getBackupStatus, startScheduler } from "./backup.js";
+import { signToken, verifyPassword, verifyToken } from "./auth.js";
 
 const PORT = Number(process.env.PORT || 4000);
-const APP_VERSION = "0.1.2";
-const APP_BUILD = "backup-safety";
+const APP_VERSION = "0.2.0";
+const APP_BUILD = "real-auth";
 const APP_ENV = process.env.NODE_ENV || "production";
 const startedAt = Date.now();
 
@@ -30,6 +31,32 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("tiny"));
+
+function getBearerToken(req) {
+  const header = String(req.headers.authorization || "");
+  if (!header.toLowerCase().startsWith("bearer ")) return null;
+  return header.slice(7).trim();
+}
+
+async function requireAuth(req, res, next) {
+  try {
+    const token = getBearerToken(req);
+    if (!token) return res.status(401).json({ error: "authentication required" });
+
+    const payload = verifyToken(token);
+    const [user] = await query(
+      "SELECT id, username, email, role FROM users WHERE id = ? LIMIT 1",
+      [Number(payload.sub)]
+    );
+    if (!user) return res.status(401).json({ error: "invalid session" });
+
+    req.user = user;
+    next();
+  } catch (e) {
+    log("warn", "auth_rejected", { path: req.path, reason: e?.message });
+    res.status(401).json({ error: "invalid or expired session" });
+  }
+}
 
 // ── Health ──────────────────────────────────────────────────────────────────
 app.get("/api/health", async (_req, res) => {
