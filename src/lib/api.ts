@@ -27,6 +27,26 @@ export const api = {
     request<T>(path, { method: "POST", body: body ? JSON.stringify(body) : undefined }),
 };
 
+export interface BackupStatus {
+  status: "ok" | "error";
+  last_backup: string | null;
+  last_backup_id: string | null;
+  last_error: string | null;
+  next_backup: string | null;
+  scheduled: boolean;
+  interval_hours: number;
+  backup_path: string;
+  running: boolean;
+}
+
+export interface BackupRunResult {
+  status: "ok" | "error";
+  message: string;
+  backup_id?: string;
+  size_bytes?: number;
+  timestamp: string;
+}
+
 export interface HealthResponse {
   status: "ok" | "degraded" | "down" | "error";
   uptime: number;
