@@ -4,8 +4,8 @@ import { useState, type FormEvent } from "react";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Login — BBS Core" },
-      { name: "description", content: "Sign in to the Boo Base System control panel." },
+      { title: "Bejelentkezés — BBS Core" },
+      { name: "description", content: "Jelentkezz be a Boo Base System vezérlőpultjára." },
     ],
   }),
   component: LoginPage,
