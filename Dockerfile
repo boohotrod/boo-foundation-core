@@ -9,9 +9,8 @@ RUN corepack enable && npm install --no-audit --no-fund
 # Build static frontend
 COPY . .
 RUN npm run build
-
-# ───────── Runtime: nginx serving static + /api proxy ─────────
-FROM nginx:1.27-alpine AS runtime
+# TanStack Start is SSR by default; synthesize a static index.html for nginx.
+RUN node docker/generate-index.mjs dist/client
 
 # ───────── Runtime: nginx serving static + /api proxy ─────────
 FROM nginx:1.27-alpine AS runtime
