@@ -67,7 +67,7 @@ export const api = {
   login: (username: string, password: string) =>
     request<AuthSession>("/login", { method: "POST", body: JSON.stringify({ username, password }) }),
   me: () => request<{ user: AuthUser }>("/me"),
-  logout: () => request<{ ok: true }>("/logout", { method: "POST" }),
+  logout: () => request<{ loggedOut: true }>("/logout", { method: "POST" }),
 };
 
 export interface BackupStatus {
