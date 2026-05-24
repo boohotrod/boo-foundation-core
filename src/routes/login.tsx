@@ -1,5 +1,5 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { type FormEvent } from "react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -63,17 +63,16 @@ const buttonStyle = {
 } as const;
 
 function LoginPage() {
-  const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const username = String(form.get("username") || "admin");
+
     localStorage.setItem(
       "bbs_session",
       JSON.stringify({ user: username || "admin", token: "placeholder", ts: Date.now() }),
     );
-    navigate({ to: "/dashboard" });
+    window.location.href = "/dashboard";
   };
 
   return (
@@ -93,8 +92,6 @@ function LoginPage() {
               id="bbs-username"
               name="username"
               type="text"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
               autoComplete="username"
               style={inputStyle}
             />
@@ -108,8 +105,6 @@ function LoginPage() {
               id="bbs-password"
               name="password"
               type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
               style={inputStyle}
             />
