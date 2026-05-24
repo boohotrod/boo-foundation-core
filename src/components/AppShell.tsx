@@ -11,11 +11,11 @@ import {
 } from "lucide-react";
 
 const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/plugins", label: "Plugins", icon: Puzzle },
-  { to: "/system-health", label: "System Health", icon: Activity },
-  { to: "/settings", label: "Settings", icon: SettingsIcon },
-  { to: "/rollback-points", label: "Rollback Points", icon: History },
+  { to: "/dashboard", label: "Vezérlőpult", icon: LayoutDashboard },
+  { to: "/plugins", label: "Bővítmények", icon: Puzzle },
+  { to: "/system-health", label: "Rendszerállapot", icon: Activity },
+  { to: "/settings", label: "Beállítások", icon: SettingsIcon },
+  { to: "/rollback-points", label: "Visszaállítási pontok", icon: History },
 ] as const;
 
 export function AppShell({ children, title }: { children: ReactNode; title: string }) {
