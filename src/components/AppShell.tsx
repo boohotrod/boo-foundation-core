@@ -47,7 +47,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
                 className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm ${
                   active
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    : "text-muted-foreground"
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -58,7 +58,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         </nav>
         <button
           onClick={logout}
-          className="m-3 flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+          className="m-3 flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground"
         >
           <LogOut className="h-4 w-4" />
           Kijelentkezés
