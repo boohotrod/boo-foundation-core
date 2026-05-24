@@ -1,3 +1,5 @@
-export function RequireAuth({ children }: { children: React.ReactNode }) {
+import { type ReactNode } from "react";
+
+export function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
