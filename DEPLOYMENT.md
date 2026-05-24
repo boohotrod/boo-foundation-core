@@ -81,10 +81,10 @@ BACKUP_PATH=/backups
 
 ```bash
 # Trigger a manual backup
-curl -s -X POST http://<VPS_IP>:8080/api/backup/run | jq
+curl -s -X POST -H "Authorization: Bearer $TOKEN" http://<VPS_IP>:8080/api/backup/run | jq
 
 # Inspect status
-curl -s http://<VPS_IP>:8080/api/backup/status | jq
+curl -s -H "Authorization: Bearer $TOKEN" http://<VPS_IP>:8080/api/backup/status | jq
 
 # List backup files on the VPS
 ls -lh /opt/boo-foundation-core/backups
