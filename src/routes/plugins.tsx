@@ -5,7 +5,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { api, Plugin } from "@/lib/api";
 
 export const Route = createFileRoute("/plugins")({
-  head: () => ({ meta: [{ title: "Plugins — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Bővítmények — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <PluginsPage />
