@@ -3,10 +3,11 @@ import cors from "cors";
 import morgan from "morgan";
 import os from "os";
 import { query, ping, migrateAndSeed } from "./db.js";
+import { runBackup, getBackupStatus, startScheduler } from "./backup.js";
 
 const PORT = Number(process.env.PORT || 4000);
-const APP_VERSION = "0.1.1";
-const APP_BUILD = "stabilization";
+const APP_VERSION = "0.1.2";
+const APP_BUILD = "backup-safety";
 const APP_ENV = process.env.NODE_ENV || "production";
 const startedAt = Date.now();
 
@@ -74,6 +75,17 @@ app.post("/api/login", (req, res) => {
   }
   log("info", "login_attempt", { username });
   res.json({ ok: true });
+});
+
+// ── Backup ──────────────────────────────────────────────────────────────────
+app.post("/api/backup/run", async (_req, res) => {
+  log("info", "backup_requested", { trigger: "manual" });
+  const result = await runBackup({ trigger: "manual", logger: log });
+  res.status(result.status === "ok" ? 200 : 500).json(result);
+});
+
+app.get("/api/backup/status", (_req, res) => {
+  res.json(getBackupStatus());
 });
 
 // ── Plugins ─────────────────────────────────────────────────────────────────
@@ -204,6 +216,7 @@ async function boot() {
 
   app.listen(PORT, () => {
     log("info", "server_started", { port: PORT });
+    startScheduler(log);
   });
 }
 

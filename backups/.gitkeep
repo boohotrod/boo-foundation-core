@@ -1,0 +1,2 @@
+# Keep this directory in git so the compose bind-mount target exists.
+# Backup .sql files are written here by the backend container.

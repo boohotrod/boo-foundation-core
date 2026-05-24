@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { AppShell } from "@/components/AppShell";
 import { RequireAuth } from "@/components/RequireAuth";
-import { api, HealthResponse, SystemStatus } from "@/lib/api";
+import { api, HealthResponse, SystemStatus, BackupStatus, BackupRunResult } from "@/lib/api";
 
 export const Route = createFileRoute("/system-health")({
   head: () => ({ meta: [{ title: "Rendszerállapot — BBS Core" }] }),
@@ -38,12 +39,13 @@ function SystemHealthPage() {
 
   return (
     <AppShell title="Rendszerállapot">
+      <BackupSection />
       <div className="mb-4 rounded-xl border border-border bg-card p-5">
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Rendszer összegzés
         </h3>
         <dl className="grid gap-2 text-sm md:grid-cols-2">
-          <Row label="Frontend" value="OK (v0.1.1)" />
+          <Row label="Frontend" value="OK (v0.1.2)" />
           <Row
             label="Backend"
             value={
@@ -55,7 +57,7 @@ function SystemHealthPage() {
             }
           />
           <Row label="Adatbázis" value={status.data?.database ?? (status.isError ? "nincs kapcsolat" : "…")} />
-          <Row label="Build" value={health.data?.build ?? "stabilization"} />
+          <Row label="Build" value={health.data?.build ?? "backup-safety"} />
           <Row label="Környezet" value={health.data?.environment ?? "production"} />
           <Row label="Időbélyeg" value={new Date().toLocaleString("hu-HU")} />
         </dl>
@@ -110,6 +112,80 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between border-b border-border/50 py-1.5 last:border-0">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-mono">{value}</dd>
+    </div>
+  );
+}
+
+function fmtTime(s: string | null | undefined) {
+  if (!s) return "—";
+  try {
+    return new Date(s).toLocaleString("hu-HU");
+  } catch {
+    return s;
+  }
+}
+
+function BackupSection() {
+  const qc = useQueryClient();
+  const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const backup = useQuery({
+    queryKey: ["backup-status"],
+    queryFn: () => api.get<BackupStatus>("/backup/status"),
+    refetchInterval: 10000,
+  });
+  const run = useMutation({
+    mutationFn: () => api.post<BackupRunResult>("/backup/run"),
+    onSuccess: (r) => {
+      setMsg({
+        kind: r.status === "ok" ? "ok" : "error",
+        text: r.status === "ok" ? `Mentés sikeres: ${r.backup_id}` : `Hiba: ${r.message}`,
+      });
+      qc.invalidateQueries({ queryKey: ["backup-status"] });
+    },
+    onError: (e: Error) => setMsg({ kind: "error", text: `Hiba: ${e.message}` }),
+  });
+
+  const d = backup.data;
+  return (
+    <div className="mb-4 rounded-xl border border-border bg-card p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Biztonsági mentés
+        </h3>
+        <button
+          type="button"
+          onClick={() => {
+            setMsg(null);
+            run.mutate();
+          }}
+          disabled={run.isPending || d?.running}
+          className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
+        >
+          {run.isPending || d?.running ? "Mentés folyamatban…" : "Mentés indítása"}
+        </button>
+      </div>
+      <dl className="grid gap-2 text-sm md:grid-cols-2">
+        <Row label="Utolsó mentés" value={fmtTime(d?.last_backup)} />
+        <Row label="Következő mentés" value={fmtTime(d?.next_backup)} />
+        <Row label="Időköz (óra)" value={d ? String(d.interval_hours) : "—"} />
+        <Row
+          label="Ütemezett mentés"
+          value={d ? (d.scheduled ? "aktív" : "inaktív") : "—"}
+        />
+        <Row label="Mentési mappa" value={d?.backup_path ?? "—"} />
+        <Row label="Utolsó hiba" value={d?.last_error ?? "—"} />
+      </dl>
+      {msg && (
+        <div
+          className={`mt-3 rounded-md border px-3 py-2 text-sm ${
+            msg.kind === "ok"
+              ? "border-green-500/40 text-green-600"
+              : "border-destructive/40 text-destructive"
+          }`}
+        >
+          {msg.text}
+        </div>
+      )}
     </div>
   );
 }
