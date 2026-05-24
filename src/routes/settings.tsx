@@ -6,7 +6,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { api, AppSetting } from "@/lib/api";
 
 export const Route = createFileRoute("/settings")({
-  head: () => ({ meta: [{ title: "Settings — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Beállítások — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <SettingsPage />
@@ -32,7 +32,7 @@ function SettingsPage() {
   });
 
   return (
-    <AppShell title="Settings">
+    <AppShell title="Beállítások">
       <div className="max-w-2xl rounded-xl border border-border bg-card p-6">
         {data?.map((s) => (
           <div key={s.key} className="mb-4">
@@ -51,10 +51,10 @@ function SettingsPage() {
           disabled={save.isPending}
           className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
         >
-          {save.isPending ? "Saving…" : "Save changes"}
+          {save.isPending ? "Mentés…" : "Módosítások mentése"}
         </button>
         {save.isSuccess && (
-          <span className="ml-3 text-sm text-muted-foreground">Saved.</span>
+          <span className="ml-3 text-sm text-muted-foreground">Mentve.</span>
         )}
       </div>
     </AppShell>

@@ -6,7 +6,7 @@ import { api, HealthResponse, SystemStatus, Plugin } from "@/lib/api";
 import { Activity, Puzzle, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Vezérlőpult — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <DashboardPage />
@@ -33,11 +33,11 @@ function DashboardPage() {
   const enabledCount = plugins.data?.filter((p) => p.enabled).length ?? 0;
 
   return (
-    <AppShell title="Dashboard">
+    <AppShell title="Vezérlőpult">
       <div className="grid gap-4 md:grid-cols-3">
         <Card
-          title="API Health"
-          value={health.data?.status ?? (health.isError ? "down" : "…")}
+          title="API állapot"
+          value={health.data?.status ?? (health.isError ? "leállt" : "…")}
           icon={
             health.data?.status === "ok" ? (
               <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -48,25 +48,25 @@ function DashboardPage() {
           sub={health.data ? `v${health.data.version}` : ""}
         />
         <Card
-          title="Database"
-          value={status.data?.database ?? (status.isError ? "disconnected" : "…")}
+          title="Adatbázis"
+          value={status.data?.database ?? (status.isError ? "nincs kapcsolat" : "…")}
           icon={<Activity className="h-5 w-5 text-primary" />}
-          sub={status.data ? `uptime ${Math.round(status.data.uptime)}s` : ""}
+          sub={status.data ? `üzemidő ${Math.round(status.data.uptime)} mp` : ""}
         />
         <Card
-          title="Active Plugins"
+          title="Aktív bővítmények"
           value={`${enabledCount} / ${plugins.data?.length ?? 0}`}
           icon={<Puzzle className="h-5 w-5 text-primary" />}
-          sub="Plugin runtime"
+          sub="Bővítmény-futtatókörnyezet"
         />
       </div>
 
       <div className="mt-6 rounded-xl border border-border bg-card p-6">
-        <h2 className="mb-2 text-lg font-semibold">Welcome to BBS Core</h2>
+        <h2 className="mb-2 text-lg font-semibold">Üdvözlünk a BBS Core-ban</h2>
         <p className="text-sm text-muted-foreground">
-          This is milestone <code className="rounded bg-muted px-1.5 py-0.5">v0.1.0</code> — the
-          foundation. Use the sidebar to explore plugins, system health, settings, and rollback
-          points. The full BBS feature set will land in later milestones.
+          Ez a <code className="rounded bg-muted px-1.5 py-0.5">v0.1.0</code> mérföldkő — az
+          alap. A bal oldali menüből elérhetők a bővítmények, a rendszerállapot, a beállítások
+          és a visszaállítási pontok. A teljes BBS funkciókészlet a későbbi mérföldköveknél érkezik.
         </p>
       </div>
     </AppShell>

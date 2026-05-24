@@ -5,7 +5,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { api, Plugin } from "@/lib/api";
 
 export const Route = createFileRoute("/plugins")({
-  head: () => ({ meta: [{ title: "Plugins — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Bővítmények — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <PluginsPage />
@@ -26,11 +26,11 @@ function PluginsPage() {
   });
 
   return (
-    <AppShell title="Plugins">
-      {isLoading && <p className="text-sm text-muted-foreground">Loading plugins…</p>}
+    <AppShell title="Bővítmények">
+      {isLoading && <p className="text-sm text-muted-foreground">Bővítmények betöltése…</p>}
       {isError && (
         <p className="text-sm text-destructive">
-          Could not reach backend. Start the API server (see README).
+          Nem sikerült elérni a háttérszolgáltatást. Indítsd el az API szervert (lásd README).
         </p>
       )}
       <div className="grid gap-3">
@@ -57,7 +57,7 @@ function PluginsPage() {
                   : "border border-input bg-background hover:bg-accent"
               }`}
             >
-              {p.enabled ? "Enabled" : "Disabled"}
+              {p.enabled ? "Engedélyezve" : "Letiltva"}
             </button>
           </div>
         ))}
