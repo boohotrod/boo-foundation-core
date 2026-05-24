@@ -1,6 +1,5 @@
 @import "tailwindcss" source(none);
 @source "../src";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -140,5 +139,22 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  input,
+  button,
+  textarea,
+  select,
+  a {
+    transition: none;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 }
