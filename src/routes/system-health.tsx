@@ -37,22 +37,22 @@ function SystemHealthPage() {
   });
 
   return (
-    <AppShell title="System Health">
+    <AppShell title="Rendszerállapot">
       <div className="grid gap-4 md:grid-cols-2">
         <Panel title="API">
-          <Row label="Status" value={health.data?.status ?? "—"} />
-          <Row label="Version" value={health.data?.version ?? "—"} />
+          <Row label="Állapot" value={health.data?.status ?? "—"} />
+          <Row label="Verzió" value={health.data?.version ?? "—"} />
           <Row
-            label="Uptime"
-            value={health.data ? `${Math.round(health.data.uptime)} s` : "—"}
+            label="Üzemidő"
+            value={health.data ? `${Math.round(health.data.uptime)} mp` : "—"}
           />
-          <Row label="Timestamp" value={health.data?.timestamp ?? "—"} />
+          <Row label="Időbélyeg" value={health.data?.timestamp ?? "—"} />
         </Panel>
-        <Panel title="System">
-          <Row label="Database" value={status.data?.database ?? "—"} />
+        <Panel title="Rendszer">
+          <Row label="Adatbázis" value={status.data?.database ?? "—"} />
           <Row label="CPU" value={status.data ? `${status.data.cpu.toFixed(1)} %` : "—"} />
           <Row
-            label="Memory"
+            label="Memória"
             value={
               status.data
                 ? `${fmtBytes(status.data.memory.used)} / ${fmtBytes(status.data.memory.total)}`
@@ -60,7 +60,7 @@ function SystemHealthPage() {
             }
           />
           <Row
-            label="Disk"
+            label="Lemez"
             value={
               status.data
                 ? `${fmtBytes(status.data.disk.used)} / ${fmtBytes(status.data.disk.total)}`
