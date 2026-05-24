@@ -6,7 +6,7 @@ import { api, HealthResponse, SystemStatus, Plugin } from "@/lib/api";
 import { Activity, Puzzle, CheckCircle2, AlertCircle } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Vezérlőpult — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <DashboardPage />
