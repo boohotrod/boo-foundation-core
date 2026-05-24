@@ -1,6 +1,5 @@
 @import "tailwindcss" source(none);
 @source "../src";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -133,6 +132,15 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
   * {
     border-color: var(--color-border);
   }
@@ -140,5 +148,14 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus,
+  button:focus {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 }

@@ -1,6 +1,5 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { Shield } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useState, type FormEvent } from "react";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -28,14 +27,15 @@ function loadUsers(): StoredUser[] {
 }
 
 function LoginPage() {
-  const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    const form = new FormData(e.currentTarget);
+    const username = String(form.get("username") ?? "").trim();
+    const password = String(form.get("password") ?? "");
 
     if (!username || !password) {
       setError("Username and password are required.");
@@ -59,57 +59,61 @@ function LoginPage() {
       "bbs_session",
       JSON.stringify({ user: username, ts: Date.now() })
     );
-    navigate({ to: "/dashboard" });
+    window.location.assign("/dashboard");
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <main className="flex min-h-screen items-center justify-center bg-background px-4 text-foreground">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Shield className="h-6 w-6" />
+          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-md bg-primary text-lg font-bold text-primary-foreground">
+            B
           </div>
-          <h1 className="text-2xl font-semibold">BBS Core</h1>
+          <h1 className="text-2xl font-semibold">BBS Core Login</h1>
           <p className="text-sm text-muted-foreground">Boo Base System · v0.1.0</p>
         </div>
         <form
           onSubmit={onSubmit}
-          className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm"
+          className="space-y-4 rounded-md border border-border bg-card p-6"
         >
           <div>
-            <label className="mb-1 block text-sm font-medium">Username</label>
+            <label htmlFor="bbs-username" className="mb-1 block text-sm font-medium">
+              Username
+            </label>
             <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              id="bbs-username"
+              name="username"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               autoComplete="username"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Password</label>
+            <label htmlFor="bbs-password" className="mb-1 block text-sm font-medium">
+              Password
+            </label>
             <input
+              id="bbs-password"
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               autoComplete="current-password"
             />
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}
           <button
             type="submit"
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             Sign in
           </button>
           <p className="text-center text-xs text-muted-foreground">
             Don't have an account?{" "}
-            <Link to="/register" className="text-primary hover:underline">
+            <a href="/register" className="text-primary underline">
               Register
-            </Link>
+            </a>
           </p>
         </form>
       </div>
-    </div>
+    </main>
   );
 }
