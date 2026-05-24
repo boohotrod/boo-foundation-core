@@ -236,3 +236,93 @@ Set in `.env` next to `docker-compose.yml`:
 - System status:     `http://178.105.46.214:8080/api/system/status`
 - Backup status:     `http://178.105.46.214:8080/api/backup/status`
 - System Status UI:  `http://178.105.46.214:8080/system-health`
+
+---
+
+## 11. v0.2.0 — Real Authentication
+
+The placeholder login is replaced with backend-validated auth (bcrypt + JWT).
+
+### First-login credentials
+
+On the very first boot, if the `users` table is empty, BBS Core seeds a
+SuperAdmin from these env vars (defaults shown):
+
+| Variable               | Default                |
+| ---------------------- | ---------------------- |
+| `SUPERADMIN_USERNAME`  | `superadmin`           |
+| `SUPERADMIN_EMAIL`     | `admin@bbs.local`      |
+| `SUPERADMIN_PASSWORD`  | `ChangeMe!Admin123`    |
+
+**Change the password immediately after first login.** Subsequent boots do
+not re-seed and do not overwrite an existing user.
+
+### Required ENV
+
+- `APP_SECRET` is now **required** (>=32 chars). It signs JWT auth tokens.
+  Rotating it invalidates every active session.
+- Optional: `JWT_EXPIRES_IN` (default `7d`), `BCRYPT_ROUNDS` (default `10`).
+
+### Auth endpoints
+
+| Method | Path           | Auth | Purpose                                 |
+| ------ | -------------- | ---- | --------------------------------------- |
+| POST   | `/api/login`   | no   | `{username|email, password}` → `{token, user}` |
+| POST   | `/api/logout`  | no   | Stateless ack; client discards token    |
+| GET    | `/api/me`      | yes  | Current user from bearer token          |
+
+All other `/api/*` endpoints (plugins, settings, backup, system status,
+rollback-points) now require `Authorization: Bearer <token>`.
+`/api/health` stays public for Docker healthchecks.
+
+### Test commands
+
+```bash
+# 1. Login as SuperAdmin (use the values you set in .env)
+TOKEN=$(curl -s -X POST http://178.105.46.214:8080/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"superadmin","password":"ChangeMe!Admin123"}' | jq -r .token)
+echo "$TOKEN"
+
+# 2. Wrong password → 401 + Hungarian error
+curl -s -X POST http://178.105.46.214:8080/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"superadmin","password":"wrong"}' | jq
+
+# 3. Protected endpoint without token → 401
+curl -s http://178.105.46.214:8080/api/plugins | jq
+
+# 4. Protected endpoint with token → 200
+curl -s http://178.105.46.214:8080/api/plugins \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+# 5. Current user
+curl -s http://178.105.46.214:8080/api/me \
+  -H "Authorization: Bearer $TOKEN" | jq
+
+# 6. Failed login audit log
+docker compose exec -T db mariadb -ubbs -p"$DB_PASSWORD" bbs_core \
+  -e "SELECT login, ip, reason, attempted_at FROM failed_login_attempts ORDER BY id DESC LIMIT 10;"
+```
+
+### Deploy
+
+```bash
+cd /opt/bbs-core
+git pull
+docker compose up -d --build backend frontend
+docker compose logs backend --tail=50
+```
+
+Expect `superadmin_created` in the logs on the very first boot only.
+
+### Rollback
+
+```bash
+git log --oneline -5
+git revert HEAD --no-edit
+docker compose up -d --build backend frontend
+```
+
+The `users` and `failed_login_attempts` tables remain (safe to keep — they
+are simply unused by v0.1.x).
