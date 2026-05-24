@@ -57,7 +57,7 @@ function PluginsPage() {
                   : "border border-input bg-background hover:bg-accent"
               }`}
             >
-              {p.enabled ? "Enabled" : "Disabled"}
+              {p.enabled ? "Engedélyezve" : "Letiltva"}
             </button>
           </div>
         ))}
