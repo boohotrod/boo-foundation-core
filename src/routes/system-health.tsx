@@ -39,12 +39,13 @@ function SystemHealthPage() {
 
   return (
     <AppShell title="Rendszerállapot">
+      <BackupSection />
       <div className="mb-4 rounded-xl border border-border bg-card p-5">
         <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           Rendszer összegzés
         </h3>
         <dl className="grid gap-2 text-sm md:grid-cols-2">
-          <Row label="Frontend" value="OK (v0.1.1)" />
+          <Row label="Frontend" value="OK (v0.1.2)" />
           <Row
             label="Backend"
             value={
@@ -56,7 +57,7 @@ function SystemHealthPage() {
             }
           />
           <Row label="Adatbázis" value={status.data?.database ?? (status.isError ? "nincs kapcsolat" : "…")} />
-          <Row label="Build" value={health.data?.build ?? "stabilization"} />
+          <Row label="Build" value={health.data?.build ?? "backup-safety"} />
           <Row label="Környezet" value={health.data?.environment ?? "production"} />
           <Row label="Időbélyeg" value={new Date().toLocaleString("hu-HU")} />
         </dl>
