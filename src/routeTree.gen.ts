@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SystemHealthRouteImport } from './routes/system-health'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RollbackPointsRouteImport } from './routes/rollback-points'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as PluginsRouteImport } from './routes/plugins'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
@@ -30,6 +31,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const RollbackPointsRoute = RollbackPointsRouteImport.update({
   id: '/rollback-points',
   path: '/rollback-points',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PluginsRoute = PluginsRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/plugins': typeof PluginsRoute
+  '/register': typeof RegisterRoute
   '/rollback-points': typeof RollbackPointsRoute
   '/settings': typeof SettingsRoute
   '/system-health': typeof SystemHealthRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/plugins': typeof PluginsRoute
+  '/register': typeof RegisterRoute
   '/rollback-points': typeof RollbackPointsRoute
   '/settings': typeof SettingsRoute
   '/system-health': typeof SystemHealthRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/plugins': typeof PluginsRoute
+  '/register': typeof RegisterRoute
   '/rollback-points': typeof RollbackPointsRoute
   '/settings': typeof SettingsRoute
   '/system-health': typeof SystemHealthRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/plugins'
+    | '/register'
     | '/rollback-points'
     | '/settings'
     | '/system-health'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/plugins'
+    | '/register'
     | '/rollback-points'
     | '/settings'
     | '/system-health'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/login'
     | '/plugins'
+    | '/register'
     | '/rollback-points'
     | '/settings'
     | '/system-health'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   PluginsRoute: typeof PluginsRoute
+  RegisterRoute: typeof RegisterRoute
   RollbackPointsRoute: typeof RollbackPointsRoute
   SettingsRoute: typeof SettingsRoute
   SystemHealthRoute: typeof SystemHealthRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/rollback-points'
       fullPath: '/rollback-points'
       preLoaderRoute: typeof RollbackPointsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plugins': {
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   PluginsRoute: PluginsRoute,
+  RegisterRoute: RegisterRoute,
   RollbackPointsRoute: RollbackPointsRoute,
   SettingsRoute: SettingsRoute,
   SystemHealthRoute: SystemHealthRoute,
@@ -187,3 +208,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
