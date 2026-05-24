@@ -108,7 +108,7 @@ app.get("/api/me", requireAuth, (req, res) => {
 
 app.post("/api/logout", requireAuth, (req, res) => {
   log("info", "logout", { userId: req.user.id, username: req.user.username });
-  res.json({ ok: true });
+  res.json({ loggedOut: true });
 });
 
 app.use("/api", requireAuth);
