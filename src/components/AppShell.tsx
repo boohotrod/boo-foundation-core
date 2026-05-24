@@ -9,6 +9,7 @@ import {
   LogOut,
   Shield,
 } from "lucide-react";
+import { api, clearAuthSession } from "@/lib/api";
 
 const NAV = [
   { to: "/dashboard", label: "Vezérlőpult", icon: LayoutDashboard },
@@ -22,8 +23,13 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  const logout = () => {
-    if (typeof window !== "undefined") localStorage.removeItem("bbs_session");
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Local cleanup still happens if the server session is already invalid.
+    }
+    if (typeof window !== "undefined") clearAuthSession();
     navigate({ to: "/login" });
   };
 
@@ -34,7 +40,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           <Shield className="h-6 w-6 text-primary" />
           <div>
             <div className="font-semibold leading-tight">BBS Core</div>
-            <div className="text-xs text-muted-foreground">v0.1.2</div>
+            <div className="text-xs text-muted-foreground">v0.2.0</div>
           </div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
@@ -70,8 +76,8 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         </header>
         <div className="flex-1 p-8">{children}</div>
         <footer className="border-t border-border bg-card/30 px-8 py-3 text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
-          <span>BBS Core v0.1.2</span>
-          <span>Build: backup-safety</span>
+          <span>BBS Core v0.2.0</span>
+          <span>Build: real-auth</span>
           <span>Környezet: production</span>
         </footer>
       </main>

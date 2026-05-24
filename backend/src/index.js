@@ -4,10 +4,11 @@ import morgan from "morgan";
 import os from "os";
 import { query, ping, migrateAndSeed } from "./db.js";
 import { runBackup, getBackupStatus, startScheduler } from "./backup.js";
+import { signToken, verifyPassword, verifyToken } from "./auth.js";
 
 const PORT = Number(process.env.PORT || 4000);
-const APP_VERSION = "0.1.2";
-const APP_BUILD = "backup-safety";
+const APP_VERSION = "0.2.0";
+const APP_BUILD = "real-auth";
 const APP_ENV = process.env.NODE_ENV || "production";
 const startedAt = Date.now();
 
@@ -31,6 +32,32 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 app.use(morgan("tiny"));
 
+function getBearerToken(req) {
+  const header = String(req.headers.authorization || "");
+  if (!header.toLowerCase().startsWith("bearer ")) return null;
+  return header.slice(7).trim();
+}
+
+async function requireAuth(req, res, next) {
+  try {
+    const token = getBearerToken(req);
+    if (!token) return res.status(401).json({ error: "authentication required" });
+
+    const payload = verifyToken(token);
+    const [user] = await query(
+      "SELECT id, username, email, role FROM users WHERE id = ? LIMIT 1",
+      [Number(payload.sub)]
+    );
+    if (!user) return res.status(401).json({ error: "invalid session" });
+
+    req.user = user;
+    next();
+  } catch (e) {
+    log("warn", "auth_rejected", { path: req.path, reason: e?.message });
+    res.status(401).json({ error: "invalid or expired session" });
+  }
+}
+
 // ── Health ──────────────────────────────────────────────────────────────────
 app.get("/api/health", async (_req, res) => {
   const db = await ping();
@@ -45,6 +72,46 @@ app.get("/api/health", async (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ── Auth ────────────────────────────────────────────────────────────────────
+app.post("/api/login", async (req, res, next) => {
+  try {
+    const login = String(req.body?.username || req.body?.email || "").trim();
+    const password = String(req.body?.password || "");
+
+    if (!login || !password) {
+      log("warn", "login_failed", { reason: "missing_credentials" });
+      return res.status(400).json({ error: "Felhasználónév/email és jelszó szükséges." });
+    }
+
+    const [user] = await query(
+      "SELECT id, username, email, password_hash, role FROM users WHERE username = ? OR email = ? LIMIT 1",
+      [login, login]
+    );
+
+    if (!user || !verifyPassword(password, user.password_hash)) {
+      log("warn", "login_failed", { login, reason: "invalid_credentials" });
+      return res.status(401).json({ error: "Hibás felhasználónév/email vagy jelszó." });
+    }
+
+    const safeUser = { id: user.id, username: user.username, email: user.email, role: user.role };
+    log("info", "login_success", { userId: user.id, username: user.username });
+    res.json({ token: signToken(safeUser), user: safeUser });
+  } catch (e) {
+    next(e);
+  }
+});
+
+app.get("/api/me", requireAuth, (req, res) => {
+  res.json({ user: req.user });
+});
+
+app.post("/api/logout", requireAuth, (req, res) => {
+  log("info", "logout", { userId: req.user.id, username: req.user.username });
+  res.json({ loggedOut: true });
+});
+
+app.use("/api", requireAuth);
 
 // ── System status ───────────────────────────────────────────────────────────
 app.get("/api/system/status", async (_req, res) => {
@@ -63,18 +130,6 @@ app.get("/api/system/status", async (_req, res) => {
     build: APP_BUILD,
     environment: APP_ENV,
   });
-});
-
-// ── Login (placeholder, logs failed attempts) ───────────────────────────────
-app.post("/api/login", (req, res) => {
-  const username = String(req.body?.username || "");
-  // v0.1.x: client-side placeholder auth. Backend only logs the attempt.
-  if (!username) {
-    log("warn", "login_failed", { reason: "missing_username" });
-    return res.status(400).json({ error: "username required" });
-  }
-  log("info", "login_attempt", { username });
-  res.json({ ok: true });
 });
 
 // ── Backup ──────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-# BBS Core — VPS deployment guide (v0.1.2)
+# BBS Core — VPS deployment guide (v0.2.0)
 
 Target: Hetzner VPS with Docker + Portainer. System nginx must remain
 disabled — the frontend container's nginx serves the SPA on port 8080.
@@ -6,8 +6,9 @@ disabled — the frontend container's nginx serves the SPA on port 8080.
 ## 1. Prerequisites
 
 - Docker + Docker Compose plugin installed
-- Project cloned to the VPS (e.g. `/opt/bbs-core`)
-- `.env` file with at minimum `DB_PASSWORD` and `APP_SECRET` set
+- Project cloned to the VPS at `/opt/boo-foundation-core`
+- `.env` file with at minimum `DB_PASSWORD`, `APP_SECRET`,
+  `SUPERADMIN_USERNAME`, and `SUPERADMIN_PASSWORD` set
   (copy from `.env.example`)
 - A writable `./backups` directory in the project root (auto-created by
   Docker if missing; bind-mounted into the backend at `/backups`)
@@ -15,7 +16,7 @@ disabled — the frontend container's nginx serves the SPA on port 8080.
 ## 2. Standard deploy (pull + rebuild)
 
 ```bash
-cd /opt/bbs-core
+cd /opt/boo-foundation-core
 git pull
 docker compose down
 docker compose up -d --build
@@ -41,16 +42,20 @@ Replace `<VPS_IP>` with the server's public IP (e.g. `178.105.46.214`).
 | ------------------------------------------- | -------------------------------------------------------------- |
 | `http://<VPS_IP>:8080/health`               | Plain text: `BBS Core Frontend OK / Version: 0.1.2 / ...`       |
 | `http://<VPS_IP>:8080/api/health`           | JSON with `"status":"ok"`, `"database":"connected"`, `version` |
-| `http://<VPS_IP>:8080/api/backup/status`    | JSON with `scheduled`, `interval_hours`, `last_backup`         |
+| `http://<VPS_IP>:8080/api/backup/status`    | `401` without token; JSON with token                            |
 | `http://<VPS_IP>:8080/`                     | Login page (no freeze on input focus)                          |
-| `http://<VPS_IP>:8080/dashboard`            | Admin dashboard after login, footer shows `v0.1.2`             |
+| `http://<VPS_IP>:8080/dashboard`            | Admin dashboard after login, footer shows `v0.2.0`             |
 
 Quick curl checks:
 
 ```bash
 curl -s http://<VPS_IP>:8080/health
 curl -s http://<VPS_IP>:8080/api/health | jq
-curl -s http://<VPS_IP>:8080/api/backup/status | jq
+curl -i -s http://<VPS_IP>:8080/api/backup/status
+TOKEN=$(curl -s -X POST http://<VPS_IP>:8080/api/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"superadmin","password":"ChangeMe!Admin123"}' | jq -r .token)
+curl -s -H "Authorization: Bearer $TOKEN" http://<VPS_IP>:8080/api/me | jq
 ```
 
 ## 4. Backup (v0.1.2)
@@ -76,16 +81,16 @@ BACKUP_PATH=/backups
 
 ```bash
 # Trigger a manual backup
-curl -s -X POST http://<VPS_IP>:8080/api/backup/run | jq
+curl -s -X POST -H "Authorization: Bearer $TOKEN" http://<VPS_IP>:8080/api/backup/run | jq
 
 # Inspect status
-curl -s http://<VPS_IP>:8080/api/backup/status | jq
+curl -s -H "Authorization: Bearer $TOKEN" http://<VPS_IP>:8080/api/backup/status | jq
 
 # List backup files on the VPS
-ls -lh /opt/bbs-core/backups
+ls -lh /opt/boo-foundation-core/backups
 
 # Verify the dump opens cleanly
-head -n 20 /opt/bbs-core/backups/backup-*.sql | head
+head -n 20 /opt/boo-foundation-core/backups/backup-*.sql | head
 ```
 
 ### Backup safety rules
@@ -119,7 +124,7 @@ events: `backup_requested`, `backup_started`, `backup_completed`,
 Safe rollback to the previous git revision:
 
 ```bash
-cd /opt/bbs-core
+cd /opt/boo-foundation-core
 git log --oneline -n 10        # find the previous good commit
 git checkout <previous-sha>
 docker compose up -d --build
