@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as _rootSpaRouteImport } from './routes/__root.spa'
 import { Route as SystemHealthRouteImport } from './routes/system-health'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RollbackPointsRouteImport } from './routes/rollback-points'
@@ -18,6 +19,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 
+const _rootSpaRoute = _rootSpaRouteImport.update({
+  id: '/__root/spa',
+  path: '/spa',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SystemHealthRoute = SystemHealthRouteImport.update({
   id: '/system-health',
   path: '/system-health',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/rollback-points': typeof RollbackPointsRoute
   '/settings': typeof SettingsRoute
   '/system-health': typeof SystemHealthRoute
+  '/spa': typeof _rootSpaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/rollback-points': typeof RollbackPointsRoute
   '/settings': typeof SettingsRoute
   '/system-health': typeof SystemHealthRoute
+  '/spa': typeof _rootSpaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/rollback-points': typeof RollbackPointsRoute
   '/settings': typeof SettingsRoute
   '/system-health': typeof SystemHealthRoute
+  '/__root/spa': typeof _rootSpaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/rollback-points'
     | '/settings'
     | '/system-health'
+    | '/spa'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/rollback-points'
     | '/settings'
     | '/system-health'
+    | '/spa'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/rollback-points'
     | '/settings'
     | '/system-health'
+    | '/__root/spa'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,10 +144,18 @@ export interface RootRouteChildren {
   RollbackPointsRoute: typeof RollbackPointsRoute
   SettingsRoute: typeof SettingsRoute
   SystemHealthRoute: typeof SystemHealthRoute
+  _rootSpaRoute: typeof _rootSpaRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/__root/spa': {
+      id: '/__root/spa'
+      path: '/spa'
+      fullPath: '/spa'
+      preLoaderRoute: typeof _rootSpaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/system-health': {
       id: '/system-health'
       path: '/system-health'
@@ -204,7 +224,18 @@ const rootRouteChildren: RootRouteChildren = {
   RollbackPointsRoute: RollbackPointsRoute,
   SettingsRoute: SettingsRoute,
   SystemHealthRoute: SystemHealthRoute,
+  _rootSpaRoute: _rootSpaRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
