@@ -1,4 +1,5 @@
 import * as mariadb from "mariadb";
+import { hashPassword } from "./auth.js";
 
 const {
   DB_HOST = "localhost",
@@ -61,6 +62,16 @@ const SCHEMA = [
     size_bytes BIGINT NOT NULL DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(128) NOT NULL UNIQUE,
+    email VARCHAR(255) NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(64) NOT NULL DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ];
 
 const SEED_PLUGINS = [
@@ -84,6 +95,16 @@ const SEED_ROLLBACKS = [
 
 export async function migrateAndSeed() {
   for (const stmt of SCHEMA) await query(stmt);
+
+  const [{ c: userCount }] = await query("SELECT COUNT(*) AS c FROM users");
+  if (Number(userCount) === 0) {
+    const username = process.env.SUPERADMIN_USERNAME || "superadmin";
+    const password = process.env.SUPERADMIN_PASSWORD || "ChangeMe!Admin123";
+    await query(
+      "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
+      [username, `${username}@local.bbs`, hashPassword(password), "superadmin"]
+    );
+  }
 
   const [{ c: pluginCount }] = await query("SELECT COUNT(*) AS c FROM plugins");
   if (Number(pluginCount) === 0) {
