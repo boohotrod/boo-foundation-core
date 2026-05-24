@@ -6,6 +6,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
 } from "@tanstack/react-router";
 
 function NotFoundComponent() {
@@ -59,6 +60,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+
+  if (pathname === "/login") {
+    return <Outlet />;
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
