@@ -1,132 +1,37 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Shield } from "lucide-react";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
       { title: "Regisztráció — BBS Core" },
-      { name: "description", content: "Hozz létre Boo Base System rendszergazdai fiókot." },
+      { name: "description", content: "BBS Core felhasználói regisztráció." },
     ],
   }),
-  component: RegisterPage,
+  component: RegisterDisabled,
 });
 
-interface StoredUser {
-  username: string;
-  // v0.1.0 placeholder — passwords stay client-side until the v0.2.0 server auth.
-  password: string;
-  createdAt: number;
-}
-
-function loadUsers(): StoredUser[] {
-  try {
-    const raw = localStorage.getItem("bbs_users");
-    return raw ? (JSON.parse(raw) as StoredUser[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function RegisterPage() {
-  const navigate = useNavigate();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-
-    if (username.length < 3) {
-      setError("A felhasználónévnek legalább 3 karakter hosszúnak kell lennie.");
-      return;
-    }
-    if (password.length < 6) {
-      setError("A jelszónak legalább 6 karakter hosszúnak kell lennie.");
-      return;
-    }
-    if (password !== confirm) {
-      setError("A jelszavak nem egyeznek.");
-      return;
-    }
-
-    const users = loadUsers();
-    if (users.some((u) => u.username.toLowerCase() === username.toLowerCase())) {
-      setError("Ez a felhasználónév már foglalt.");
-      return;
-    }
-
-    const next: StoredUser = { username, password, createdAt: Date.now() };
-    localStorage.setItem("bbs_users", JSON.stringify([...users, next]));
-    localStorage.setItem(
-      "bbs_session",
-      JSON.stringify({ user: username, ts: Date.now() })
-    );
-    navigate({ to: "/dashboard" });
-  };
-
+function RegisterDisabled() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Shield className="h-6 w-6" />
-          </div>
-          <h1 className="text-2xl font-semibold">Fiók létrehozása</h1>
-          <p className="text-sm text-muted-foreground">Boo Base System · v0.1.0</p>
+      <div className="w-full max-w-sm text-center">
+        <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <Shield className="h-6 w-6" />
         </div>
-        <form
-          onSubmit={onSubmit}
-          className="space-y-4 rounded-xl border border-border bg-card p-6"
-        >
-          <div>
-            <label className="mb-1 block text-sm font-medium">Felhasználónév</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              autoComplete="username"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Jelszó</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              autoComplete="new-password"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-sm font-medium">Jelszó megerősítése</label>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              autoComplete="new-password"
-            />
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-          >
-            Fiók létrehozása
-          </button>
-          <p className="text-center text-xs text-muted-foreground">
-            Van már fiókod?{" "}
-            <Link to="/login" className="text-primary hover:underline">
-              Bejelentkezés
-            </Link>
-          </p>
-        </form>
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          A v0.1.0 helyben tárolja a fiókokat. A szerveroldali hitelesítés a v0.2.0-ban érkezik.
+        <h1 className="text-2xl font-semibold">Regisztráció letiltva</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          A BBS Core v0.2.0-tól a felhasználói fiókokat a rendszergazda hozza
+          létre a háttérrendszerben. Az önregisztráció szándékosan ki van
+          kapcsolva.
         </p>
+        <div className="mt-6">
+          <Link
+            to="/login"
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Vissza a bejelentkezésre
+          </Link>
+        </div>
       </div>
     </div>
   );
