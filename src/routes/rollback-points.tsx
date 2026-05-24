@@ -5,7 +5,7 @@ import { RequireAuth } from "@/components/RequireAuth";
 import { api, RollbackPoint } from "@/lib/api";
 
 export const Route = createFileRoute("/rollback-points")({
-  head: () => ({ meta: [{ title: "Rollback Points — BBS Core" }] }),
+  head: () => ({ meta: [{ title: "Visszaállítási pontok — BBS Core" }] }),
   component: () => (
     <RequireAuth>
       <RollbackPointsPage />
