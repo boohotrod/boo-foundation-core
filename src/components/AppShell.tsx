@@ -34,7 +34,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           <Shield className="h-6 w-6 text-primary" />
           <div>
             <div className="font-semibold leading-tight">BBS Core</div>
-            <div className="text-xs text-muted-foreground">v0.1.0</div>
+            <div className="text-xs text-muted-foreground">v0.1.1</div>
           </div>
         </div>
         <nav className="flex-1 p-3 space-y-1">
@@ -64,11 +64,16 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
           Kijelentkezés
         </button>
       </aside>
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto flex flex-col">
         <header className="border-b border-border bg-card/50 px-8 py-4">
           <h1 className="text-xl font-semibold">{title}</h1>
         </header>
-        <div className="p-8">{children}</div>
+        <div className="flex-1 p-8">{children}</div>
+        <footer className="border-t border-border bg-card/30 px-8 py-3 text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
+          <span>BBS Core v0.1.1</span>
+          <span>Build: stabilization</span>
+          <span>Környezet: production</span>
+        </footer>
       </main>
     </div>
   );

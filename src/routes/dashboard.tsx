@@ -64,9 +64,10 @@ function DashboardPage() {
       <div className="mt-6 rounded-xl border border-border bg-card p-6">
         <h2 className="mb-2 text-lg font-semibold">Üdvözlünk a BBS Core-ban</h2>
         <p className="text-sm text-muted-foreground">
-          Ez a <code className="rounded bg-muted px-1.5 py-0.5">v0.1.0</code> mérföldkő — az
-          alap. A bal oldali menüből elérhetők a bővítmények, a rendszerállapot, a beállítások
-          és a visszaállítási pontok. A teljes BBS funkciókészlet a későbbi mérföldköveknél érkezik.
+          Ez a <code className="rounded bg-muted px-1.5 py-0.5">v0.1.1</code> stabilizációs
+          kiadás. A bal oldali menüből elérhetők a bővítmények, a rendszerállapot, a
+          beállítások és a visszaállítási pontok. A teljes BBS funkciókészlet a későbbi
+          mérföldköveknél érkezik.
         </p>
       </div>
     </AppShell>
