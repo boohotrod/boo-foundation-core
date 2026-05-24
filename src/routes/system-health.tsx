@@ -57,7 +57,7 @@ function SystemHealthPage() {
             }
           />
           <Row label="Adatbázis" value={status.data?.database ?? (status.isError ? "nincs kapcsolat" : "…")} />
-          <Row label="Build" value={health.data?.build ?? "backup-safety"} />
+          <Row label="Build" value={health.data?.build ?? "production-foundation"} />
           <Row label="Környezet" value={health.data?.environment ?? "production"} />
           <Row label="Időbélyeg" value={new Date().toLocaleString("hu-HU")} />
         </dl>

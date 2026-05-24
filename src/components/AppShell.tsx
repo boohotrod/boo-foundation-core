@@ -71,7 +71,7 @@ export function AppShell({ children, title }: { children: ReactNode; title: stri
         <div className="flex-1 p-8">{children}</div>
         <footer className="border-t border-border bg-card/30 px-8 py-3 text-xs text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
           <span>BBS Core v0.1.2</span>
-          <span>Build: backup-safety</span>
+          <span>Build: production-foundation</span>
           <span>Környezet: production</span>
         </footer>
       </main>
